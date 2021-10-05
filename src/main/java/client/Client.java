@@ -21,7 +21,7 @@ public class Client {
     double balance = 0.0;
 
     public Client() {
-        SpreadConnection connection = new SpreadConnection();
+        run();
     }
 
     public void run() {
