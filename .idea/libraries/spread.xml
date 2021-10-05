@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="spread">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/src/spread/spread.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
