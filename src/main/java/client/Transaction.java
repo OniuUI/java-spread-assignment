@@ -1,4 +1,4 @@
-package main.java;
+package main.java.client;
 
 public class Transaction {
     String command;
