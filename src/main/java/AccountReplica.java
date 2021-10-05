@@ -6,6 +6,7 @@ import spread.*;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 
 public class AccountReplica {
     public static void main(String[] args) {
@@ -15,6 +16,19 @@ public class AccountReplica {
         } catch (SpreadException | UnknownHostException e) {
             e.printStackTrace();
         }
+
+        // Example of sending message to server.
+        SpreadMessage message = new SpreadMessage();
+        String test = "test";
+        message.setData(test.getBytes(StandardCharsets.UTF_8));
+        message.addGroup("myAccount");
+        message.setReliable();
+
+        try {
+            connection.multicast(message);
+        } catch (SpreadException e) {
+            e.printStackTrace();
+        }*/
 
 
         Client client = new Client();
