@@ -6,6 +6,6 @@ import spread.*;
 public class Client {
 
     public Client() {
-        ;
+        SpreadConnection connection = new SpreadConnection();
     }
 }
