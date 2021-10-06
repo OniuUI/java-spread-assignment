@@ -36,7 +36,7 @@ public class Server {
         server.run();
         System.out.println("Server started");
         while (true){
-            System.out.println(server.receiveMessage());
+            System.out.println("message from client: " + server.receiveMessage());
         }
 
         }
