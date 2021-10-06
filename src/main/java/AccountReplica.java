@@ -31,7 +31,7 @@ public class AccountReplica {
         }*/
 
 
-        Client client = new Client();
+        Client client = new Client("group","172.27.94.24", "FirstAccount", 1, 4803);
         client.run();
     }
 }

@@ -9,41 +9,55 @@ import java.io.InterruptedIOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
+import java.util.UUID;
 
 public class Client {
     public SpreadGroup group = new SpreadGroup();
     private BufferedReader commandLineReader;
     public SpreadConnection connection = new SpreadConnection();
 
-    List<Transaction> transactions;
-    double balance = 0.0;
+    private String ServerAddress = "172.27.93.179";
+    private int port = 0;
+    private String groupName = "group";
 
-    public Client() {
-        run();
+    private String AccountName = "";
+    private int NumberOfReplicas = 0;
+
+    private List<Transaction> transactions;
+    private double balance = 0.0;
+
+    public Client(String groupName, String serverAddress, String accountName, int numberOfReplicas, int port) {
+        ServerAddress = serverAddress;
+        AccountName = accountName;
+        NumberOfReplicas = numberOfReplicas;
+        this.port = port;
+        this.groupName = groupName;
     }
 
     public void run() {
         try {
             try {
-                connection.connect(InetAddress.getByName("172.27.93.179"), 4803, "client", false, false);
-
-                group.join(connection, "group");
-
+                connection.connect(InetAddress.getByName(ServerAddress), port, "client", false, false);
+                group.join(connection, groupName);
+                System.out.println("Client started");
             } catch (SpreadException | UnknownHostException e) {
                 e.printStackTrace();
             }
+
             commandLineReader = new BufferedReader(new InputStreamReader(System.in));
-            String inputLine = "commandLineReader.readLine()";
-            System.out.println("Client started");
+            String inputLine = "";
+
             while (!Objects.equals(inputLine, "EXIT")) {
                 inputLine = commandLineReader.readLine();
 //                parseCommand(inputLine);
 //                if (inputLine.equals("test")) {
-                test(inputLine);
+//                if (inputLine != null) {
+                    sendMessage(inputLine, "Send");
 //                    testReceive();
+//                }
 //                }
             }
         } catch (Exception e) {
@@ -52,15 +66,23 @@ public class Client {
         }
     }
 
-    public void test(String message) {
+    public void sendMessage(String message, String command) {
         System.out.println("creating message");
-
         SpreadMessage msg = new SpreadMessage();
-        byte[] data = new byte[0];
 
+//        String uniqueIdentifier = UUID.randomUUID().toString().toUpperCase(Locale.ROOT);
+//        Transaction transaction = new Transaction(command, uniqueIdentifier);
+
+        //TODO: Add logic for handling different types of account interactions before sendMessage.
+
+
+        message = ("Transaction message: " + message + ", " + AccountName + " balance: " + balance);
+
+
+//        transactions.add(transaction);
 
         msg.setData(message.getBytes(StandardCharsets.UTF_8));
-        msg.addGroup("group");
+        msg.addGroup(groupName);
         msg.setReliable();
         System.out.println("Message assigned");
         try {
