@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.io.InterruptedIOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -27,19 +28,23 @@ public class Client {
     public void run() {
         try {
             try {
-                connection.connect(InetAddress.getByName("172.27.93.179"), 4803, "privatename", false, false);
+                connection.connect(InetAddress.getByName("172.27.93.179"), 4803, "client", false, false);
+
+                group.join(connection, "group");
+
             } catch (SpreadException | UnknownHostException e) {
                 e.printStackTrace();
             }
             commandLineReader = new BufferedReader(new InputStreamReader(System.in));
-            String inputLine = commandLineReader.readLine();
+            String inputLine = "commandLineReader.readLine()";
+            System.out.println("Client started");
             while (!Objects.equals(inputLine, "EXIT")) {
                 inputLine = commandLineReader.readLine();
-                parseCommand(inputLine);
-                if (inputLine.equals("test")) {
-                    test();
-                    testReceive();
-                }
+//                parseCommand(inputLine);
+//                if (inputLine.equals("test")) {
+                test(inputLine);
+//                    testReceive();
+//                }
             }
         } catch (Exception e) {
             //Log.red("Something went wrong when trying to create BufferedReader object in Client.");
@@ -47,18 +52,14 @@ public class Client {
         }
     }
 
-    public void test() {
+    public void test(String message) {
         System.out.println("creating message");
 
         SpreadMessage msg = new SpreadMessage();
         byte[] data = new byte[0];
-        try {
-            group.join(connection, "group");
-        } catch (SpreadException e) {
-            e.printStackTrace();
-        }
 
-        msg.setData(data);
+
+        msg.setData(message.getBytes(StandardCharsets.UTF_8));
         msg.addGroup("group");
         msg.setReliable();
         System.out.println("Message assigned");
@@ -74,7 +75,7 @@ public class Client {
         System.out.println(connection.receive());
         System.out.println("Message received");
     }
-    
+
     public void parseCommand(String command) {
         Log.out("Parsing command: " + command);
     }
