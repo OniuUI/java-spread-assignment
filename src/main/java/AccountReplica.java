@@ -1,37 +1,17 @@
 package main.java;
 
-import main.java.logging.Log;
-import main.java.client.Client;
-import spread.*;
-
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.nio.charset.StandardCharsets;
+import main.java.client.Replica;
 
 public class AccountReplica {
     public static void main(String[] args) {
-        /*SpreadConnection connection = new SpreadConnection();
-        try {
-            connection.connect(InetAddress.getByName("172.27.93.179"), 4803, "privatename", false, false);
-        } catch (SpreadException | UnknownHostException e) {
-            e.printStackTrace();
-        }
+        String serverAddress = "192.168.0.105";
+        int port = 4803;
+        String name = "client1";
+        String groupName = "group1";
+        Replica replica = new Replica(serverAddress, port, name, groupName);
 
-        // Example of sending message to server.
-        SpreadMessage message = new SpreadMessage();
-        String test = "test";
-        message.setData(test.getBytes(StandardCharsets.UTF_8));
-        message.addGroup("myAccount");
-        message.setReliable();
+        replica.sleep(2);
 
-        try {
-            connection.multicast(message);
-        } catch (SpreadException e) {
-            e.printStackTrace();
-        }*/
-
-
-        Client client = new Client("group","172.27.94.24", "FirstAccount", 1, 4803);
-        client.run();
+        replica.exit();
     }
 }

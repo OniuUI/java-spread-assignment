@@ -2,10 +2,15 @@ package main.java.client;
 
 public class Transaction {
     String command;
-    String unique_id;
+    String uniqueId;
 
-    public Transaction(String command, String unique_id) {
+    public Transaction(String command, String uniqueId) {
         this.command = command;
-        this.unique_id = unique_id;
+        this.uniqueId = uniqueId;
+    }
+
+    @Override
+    public String toString() {
+        return command + "[" + uniqueId + "]";
     }
 }
