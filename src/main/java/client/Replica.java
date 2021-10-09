@@ -5,11 +5,11 @@ import spread.*;
 
 import java.io.*;
 import java.net.InetAddress;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 
-public class Replica implements Client {
+import java.util.*;
+
+
+public class Replica implements Client, AdvancedMessageListener {
     // Address of the daemon server
     private String serverAddress;
     // Port that the daemon server runs on
@@ -48,7 +48,15 @@ public class Replica implements Client {
 
         // Connect to the daemon server and join the group representing the replica clients
         connect();
+
+        //Timer timer = new Timer();
+        //timer.schedule(broadcast, 10000, 1000);
+
+
+        deposit(69420);
+        broadcast();
     }
+
 
     private void connect() {
         connection = new SpreadConnection();
@@ -57,6 +65,7 @@ public class Replica implements Client {
             connection.connect(InetAddress.getByName(serverAddress), port, name, false, true);
             Log.green("Connection to daemon on address '\033[1m" + serverAddress + "'\033[0m\033[92m was successfully established");
             group.join(connection, groupName);
+            connection.add(this);
             Log.green("Group '\033[1m" + groupName + "'\033[0m\033[92m was successfully joined\n");
         } catch (Exception e) {
             Log.red("Error: something went wrong when trying to establish connection to daemon");
@@ -65,9 +74,48 @@ public class Replica implements Client {
         }
     }
 
-    private void broadcast(String message) {
 
+    public void broadcast(){
+
+        SpreadMessage newMessage = new SpreadMessage();
+        newMessage.setReliable();
+        newMessage.setSafe();
+        newMessage.addGroup(groupName);
+
+        Log.yellow("Broadcast Performed");
+        try{
+            synchronized (outstandingCollection){
+                newMessage.digest(outstandingCollection);
+                //newMessage.setData(input.getBytes(StandardCharsets.UTF_8));
+                connection.multicast(newMessage);
+            }
+        } catch (SpreadException e){
+            e.printStackTrace();
+        }
     }
+
+    /*
+    private TimerTask broadcast = new TimerTask(){
+        @Override
+        public void run() {
+            SpreadMessage newMessage = new SpreadMessage();
+            newMessage.setReliable();
+            newMessage.addGroup(groupName);
+
+            try{
+                synchronized (outstandingCollection){
+                    newMessage.digest((Serializable) outstandingCollection);
+                    //newMessage.setData(input.getBytes(StandardCharsets.UTF_8));
+                    connection.multicast(newMessage);
+                }
+            } catch (SpreadException e){
+                e.printStackTrace();
+            }
+        }
+    };
+    */
+
+
 
     public void parseCommand(String command) {
         ;
