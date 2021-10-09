@@ -4,14 +4,28 @@ import main.java.client.Replica;
 
 public class AccountReplica {
     public static void main(String[] args) {
-        String serverAddress = "192.168.0.105";
+        Replica[] replica;
+        String serverAddress = "172.18.102.123";
         int port = 4803;
         String name = "client1";
         String groupName = "group1";
-        Replica replica = new Replica(serverAddress, port, name, groupName);
 
-        replica.sleep(2);
 
-        replica.exit();
+
+        replica = new Replica[3];
+        for (int i = 0; i < 3; i++) {
+           replica[i] = new Replica(serverAddress, port, name + i, groupName);
+           replica[i].deposit(500);
+           replica[i].sleep(2);
+//           replica[i].regularMessageReceived();
+//           replica[i].broadcast();
+        }
+
+        while (true) {
+
+        }
+
     }
+
 }
+

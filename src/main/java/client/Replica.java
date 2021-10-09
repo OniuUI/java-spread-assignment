@@ -3,7 +3,7 @@ package main.java.client;
 import main.java.logging.Log;
 import spread.*;
 
-import java.io.BufferedReader;
+import java.io.*;
 import java.net.InetAddress;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -26,13 +26,20 @@ public class Replica implements Client {
     private double balance = 0.0;
 
     LinkedList<Transaction> executedList = new LinkedList<>();
-    LinkedList<Transaction> outstandingCollection = new LinkedList<>();
+    final LinkedList<Transaction> outstandingCollection = new LinkedList<>();
     private int orderCounter = 0;
     private int outstandingCounter = 0;
 
     // BufferedReader object to read commandline inputs
     private BufferedReader commandLineReader;
 
+    /**
+     *
+     * @param serverAddress
+     * @param port
+     * @param name
+     * @param groupName
+     */
     public Replica(String serverAddress, int port, String name, String groupName) {
         this.serverAddress = serverAddress;
         this.port = port;
@@ -78,7 +85,7 @@ public class Replica implements Client {
 
     @Override
     public void deposit(double amount) {
-        Transaction transaction = new Transaction("deposit(" + amount + ")", name + outstandingCounter);
+        Transaction transaction = new Transaction("deposit " + amount, name + outstandingCounter);
         outstandingCollection.add(transaction);
         outstandingCounter++;
     }
@@ -151,4 +158,43 @@ public class Replica implements Client {
         }
         System.exit(0);
     }
+
+    @Override
+    public void regularMessageReceived(SpreadMessage spreadMessage) {
+        Log.yellow("Regular message received");
+
+        try {
+            //  Get list of transactions from message
+            List<Transaction> data = (List<Transaction>) spreadMessage.getDigest().get(0);
+            data.forEach(t -> {
+                // Split command and value "[command] [value]"
+                String[] input = t.command.split(" ");
+
+                // Based on what the input is,
+                if (Objects.equals(input[0], "deposit")) {
+                    double val = Double.parseDouble(input[1]);
+                    this.balance += val;
+                    Log.green("Deposited " + val);
+                } else {
+                    double val = Double.parseDouble(input[1]);
+                    this.balance = this.balance * (1 + (val / 100));
+                    Log.green("Deposited " + val);
+                }
+
+                this.outstandingCollection.removeIf(item -> item.uniqueId.equals(t.uniqueId));
+                this.executedList.add(t);
+            });
+
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void membershipMessageReceived(SpreadMessage spreadMessage) {
+        Log.out("Hei fra membershipMessageReceived");
+    }
+
 }
