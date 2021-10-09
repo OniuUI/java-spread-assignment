@@ -8,7 +8,6 @@ import java.net.InetAddress;
 
 import java.util.*;
 
-
 public class Replica implements Client, AdvancedMessageListener {
     // Address of the daemon server
     private String serverAddress;
@@ -33,13 +32,6 @@ public class Replica implements Client, AdvancedMessageListener {
     // BufferedReader object to read commandline inputs
     private BufferedReader commandLineReader;
 
-    /**
-     *
-     * @param serverAddress
-     * @param port
-     * @param name
-     * @param groupName
-     */
     public Replica(String serverAddress, int port, String name, String groupName) {
         this.serverAddress = serverAddress;
         this.port = port;
@@ -48,15 +40,7 @@ public class Replica implements Client, AdvancedMessageListener {
 
         // Connect to the daemon server and join the group representing the replica clients
         connect();
-
-        //Timer timer = new Timer();
-        //timer.schedule(broadcast, 10000, 1000);
-
-
-        deposit(69420);
-        broadcast();
     }
-
 
     private void connect() {
         connection = new SpreadConnection();
@@ -74,15 +58,12 @@ public class Replica implements Client, AdvancedMessageListener {
         }
     }
 
-
     public void broadcast(){
-
         SpreadMessage newMessage = new SpreadMessage();
         newMessage.setReliable();
         newMessage.setSafe();
         newMessage.addGroup(groupName);
 
-        Log.yellow("Broadcast Performed");
         try{
             synchronized (outstandingCollection){
                 newMessage.digest(outstandingCollection);
@@ -114,8 +95,6 @@ public class Replica implements Client, AdvancedMessageListener {
         }
     };
     */
-
-
 
     public void parseCommand(String command) {
         ;
@@ -242,7 +221,7 @@ public class Replica implements Client, AdvancedMessageListener {
 
     @Override
     public void membershipMessageReceived(SpreadMessage spreadMessage) {
-        Log.out("Hei fra membershipMessageReceived");
+        ;
     }
 
 }

@@ -5,12 +5,10 @@ import main.java.client.Replica;
 public class AccountReplica {
     public static void main(String[] args) {
         Replica[] replica;
-        String serverAddress = "172.18.102.123";
+        String serverAddress = "localhost";
         int port = 4803;
         String name = "client1";
         String groupName = "group1";
-
-
 
         replica = new Replica[3];
         for (int i = 0; i < 3; i++) {
