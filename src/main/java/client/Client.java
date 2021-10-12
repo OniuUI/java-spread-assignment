@@ -29,13 +29,13 @@ public interface Client {
 
     // This command returns the status of a deposit or addInterest transaction to show if it has been
     // applied yet.
-    public int checkTxStatus(String transactionId);
+    public void checkTxStatus(String transactionId);
 
     // This command causes the client to empty the list of recent transactions.
     public void cleanHistory();
 
     // Returns the names of the current participants in the group, and prints it to the screen.
-    public String memberInfo();
+    public void memberInfo();
 
     // This command causes the client to do nothing for <duration> seconds. It is only useful in
     // a batch file.

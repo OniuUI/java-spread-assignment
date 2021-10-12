@@ -1,29 +1,22 @@
 package main.java;
 
+import main.java.logging.Log;
+import main.java.client.Client;
 import main.java.client.Replica;
+
+import java.util.Random;
 
 public class AccountReplica {
     public static void main(String[] args) {
-        Replica[] replica;
-        String serverAddress = "localhost";
-        int port = 4803;
-        String name = "client1";
-        String groupName = "group1";
+        String serverAddress = args[0];
+        String accountName = args[1];
+        int numReplicas = Integer.parseInt(args[2]);
+        String fileName = (args.length > 3) ? args[3] : null;
 
-        replica = new Replica[3];
-        for (int i = 0; i < 3; i++) {
-           replica[i] = new Replica(serverAddress, port, name + i, groupName);
-           replica[i].deposit(500);
-           replica[i].sleep(2);
-//           replica[i].regularMessageReceived();
-//           replica[i].broadcast();
-        }
+        int port = 4803; // Default spread toolkit port
 
-        while (true) {
-
-        }
-
+        Client client = new Replica(serverAddress, port, accountName, numReplicas);
+        try { Thread.sleep(1000); } catch (Exception e) { Log.red("Error"); Log.out(e.toString()); }
     }
-
 }
 
