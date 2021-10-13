@@ -4,20 +4,19 @@ import main.java.logging.Log;
 import spread.*;
 
 import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 
-import java.util.List;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Iterator;
+import java.util.*;
 
 public class Replica implements Client {
     // Static id counter to give each replica a unique name
     private static int count = 0;
     // Boolean flag for whether the replica is active or not
     private boolean active = true;
+    // Boolean flag for whether the client is waiting to report a synced balance
+    private boolean awaitingSyncedBalance = false;
 
     // Address of the daemon server
     private String serverAddress;
@@ -29,6 +28,8 @@ public class Replica implements Client {
     private String accountName;
     // Number of replicas (that is meant to be in the group)
     private int numReplicas;
+    // The command input filename (this will be null if a filename was not provided when running the replica)
+    private String commandFilename;
     // A set containing all the members of the group
     private Set<String> members = new HashSet<>();
 
@@ -47,12 +48,13 @@ public class Replica implements Client {
     // BufferedReader object to read commandline inputs
     private BufferedReader commandLineReader;
 
-    public Replica(String serverAddress, int port, String accountName, int numReplicas) {
+    public Replica(String serverAddress, int port, String accountName, int numReplicas, String filename) {
         this.serverAddress = serverAddress;
         this.port = port;
         this.name = "replica" + (++count);
         this.accountName = accountName;
         this.numReplicas = numReplicas;
+        this.commandFilename = filename;
 
         // Connect to the daemon server and join the group representing the replica clients
         connect();
@@ -60,9 +62,18 @@ public class Replica implements Client {
         addMessageListener();
         // Wait for <numReplicas> replicas to join the group
         awaitMembers();
-        // Start running the client
-        if (name.equals("replica1"))
+        // Start broadcasting timer task
+        startBroadcaster();
+        // Start running the client, either by taking commands through the commandline or by running the commands from
+        // the input file
+        if (!name.equals("replica1")) {
+            while (true)
+                continue;
+        }
+        if (commandFilename == null)
             run();
+        else
+            runCommandFile();
     }
 
     private void connect() {
@@ -93,17 +104,39 @@ public class Replica implements Client {
                 } catch (Exception e) {
                     Log.out("\033[1m[" + name + "]\033[0m " + "\033[91mError\033[0m: something went wrong when trying to decode message");
                 }
-                //Log.out("\033[1m[" + name + "]\033[0m " + "SpreadMessage received from '\033[1m" + spreadMessage.getSender() +"\033[0m' -> " + message);
 
-                System.out.println("REGULAR MESSAGE");
+                // Upon receiving the collection of outstanding transactions, they are each applied
                 Iterator<Transaction> outstandingIter = outstanding.iterator();
                 while (outstandingIter.hasNext()) {
                     Transaction t = outstandingIter.next();
-                    System.out.println(t);
+                    String[] data = t.command.split(" ");
+
+                    // apply the transaction
+                    if (data[0].equals("deposit")) {
+                        balance += Double.parseDouble(data[1]);
+                        Log.out("[" + name + "] updated balance to: " + balance);
+                    } else if (data[0].equals("addInterest")) {
+                        balance *= (1 + (Double.parseDouble(data[1]) / 100));
+                        Log.out("[" + name + "] updated balance to: " + balance);
+                    }
+
+                    // Remove the transaction from outstanding collection.
+                    // This is necessary for the client that sent the outstanding collection
+                    outstandingCollection.removeIf(transaction -> transaction.uniqueId.equals(t.uniqueId));
+                    // Add the performed transaction to the executed list
+                    executedList.add(t);
+                }
+
+                // If the client has been waiting to report a synced balance, we do this now since all the outstanding
+                // transactions have been processed
+                if (awaitingSyncedBalance) {
+                    Log.out("\033[1m[" + name + "]\033[0m " + "Current (synced) balance: " + balance);
+                    awaitingSyncedBalance = false;
                 }
             }
 
-            // Method that receives a message when a new member join the group
+            // Method that receives a message when the membership status changes, for example if a client leaves
+            // or a new client joins
             @Override
             public void membershipMessageReceived(SpreadMessage spreadMessage) {
                 if (!active)
@@ -135,6 +168,26 @@ public class Replica implements Client {
         Log.out("\033[1m[" + name + "]\033[0m " + "All replicas joined the group \033[92msuccessfully\033[0m");
     }
 
+    private void startBroadcaster() {
+        Timer timer = new Timer();
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                SpreadMessage message = new SpreadMessage();
+                message.setReliable();
+                message.addGroup(group);
+                try {
+                    message.digest(outstandingCollection);
+                    connection.multicast(message);
+                } catch (Exception e) {
+                    Log.out("\033[1m[" + name + "]\033[0m " + "\033[91mError\033[0m: something went wrong when trying to digest or send spread message");
+                    Log.out(e.toString());
+                    System.exit(1);
+                }
+            }
+        }, 10_000, 10_000);
+    }
+
     private void run() {
         // Create the buffered reader for commandline inputs
         try {
@@ -146,7 +199,7 @@ public class Replica implements Client {
         String command = null;
         while (active) {
             try {
-                printMenu();
+                System.out.print("\033[95m$>\033[0m ");
                 command = commandLineReader.readLine();
             } catch (Exception e) {
                 Log.out("\033[1m[" + name + "]\033[0m " + "\033[91mError\033[0m: something went wrong when trying to read command line input");
@@ -156,7 +209,7 @@ public class Replica implements Client {
     }
 
     private void printMenu() {
-        Log.bright("--- Enter command ---");
+        Log.bright("--- Valid commands ---");
         Log.out("\033[3mgetQuickBalance\033[0m                -> to get unsynced balance");
         Log.out("\033[3mgetSyncedBalance\033[0m               -> to get synced balance");
         Log.out("\033[3mdeposit <amount>\033[0m               -> to deposit a positive or negative amount");
@@ -167,7 +220,21 @@ public class Replica implements Client {
         Log.out("\033[3mmemberInfo\033[0m                     -> to get the group membership info");
         Log.out("\033[3msleep <duration>\033[0m               -> to make the client sleep for <duration> seconds");
         Log.out("\033[3mexit\033[0m                           -> to close down the client");
-        System.out.print("\033[95m$>\033[0m ");
+    }
+
+    private void runCommandFile() {
+        try {
+            commandLineReader = new BufferedReader(new FileReader(commandFilename));
+            String command = commandLineReader.readLine();
+            while (command != null && !command.equals("exit")) {
+                processCommand(command);
+                command = commandLineReader.readLine();
+            }
+        } catch (Exception e) {
+            Log.out("\033[1m[" + name + "]\033[0m " + "\033[91mError\033[0m: something went wrong when trying to read and process command batch file");
+            Log.out(e.toString());
+            System.exit(1);
+        }
     }
 
     private void processCommand(String command) {
@@ -185,22 +252,8 @@ public class Replica implements Client {
             case "exit" -> { exit(); }
             default -> {
                 Log.out("\033[1m[" + name + "]\033[0m " + "\033[91mError\033[0m: invalid command: '\033[1m" + data[0] + "\033[0m'");
+                printMenu();
             }
-        }
-    }
-
-    private void broadcast() {
-        SpreadMessage message = new SpreadMessage();
-        message.setReliable();
-        message.addGroup(group);
-
-        try {
-            message.digest(outstandingCollection);
-            connection.multicast(message);
-        } catch (Exception e) {
-            Log.out("\033[1m[" + name + "]\033[0m " + "\033[91mError\033[0m: something went wrong when trying to digest or send spread message");
-            Log.out(e.toString());
-            System.exit(1);
         }
     }
 
@@ -211,7 +264,7 @@ public class Replica implements Client {
 
     @Override
     public void getSyncedBalance() {
-        ;
+        awaitingSyncedBalance = true;
     }
 
     @Override
@@ -234,19 +287,19 @@ public class Replica implements Client {
     public void getHistory() {
         // Print the executed list from start to end
         Log.out("\033[1m[" + name + "]\033[0m " + "Transaction history:");
-        Log.bright("Executed transactions");
+        Log.bright("Executed transactions (" + executedList.size() + ")");
         Iterator<Transaction> executedIter = executedList.iterator();
         while (executedIter.hasNext()) {
             Transaction t = executedIter.next();
-            Log.out(t.toString());
+            Log.out(" -> " + t.toString());
         }
 
         // Print the outstanding transaction list from start to end
-        Log.bright("Outstanding transactions");
+        Log.bright("Outstanding transactions (" + outstandingCollection.size() + ")");
         Iterator<Transaction> outstandingIter = outstandingCollection.iterator();
         while (outstandingIter.hasNext()) {
             Transaction t = outstandingIter.next();
-            Log.out(t.toString());
+            Log.out(" -> " + t.toString());
         }
     }
 
@@ -280,7 +333,6 @@ public class Replica implements Client {
     public void cleanHistory() {
         Log.out("\033[1m[" + name + "]\033[0m " + "Clearing transaction history");
         executedList.clear();
-        outstandingCollection.clear();
     }
 
     @Override
@@ -292,7 +344,7 @@ public class Replica implements Client {
 
     @Override
     public void sleep(double seconds) {
-        Log.out("\033[1m" + name + "]\033[0m " + "Sleeping for " + seconds + " seconds ...");
+        Log.out("\033[1m[" + name + "]\033[0m " + "Sleeping for " + seconds + " seconds ...");
         try {
             Thread.sleep((long) (seconds * 1000));
         } catch (Exception e) {

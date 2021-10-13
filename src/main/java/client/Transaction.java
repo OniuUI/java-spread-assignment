@@ -13,6 +13,6 @@ public class Transaction implements Serializable {
 
     @Override
     public String toString() {
-        return command + "[" + uniqueId + "]";
+        return command + " [" + uniqueId + "]";
     }
 }
