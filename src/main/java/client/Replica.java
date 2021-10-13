@@ -47,10 +47,9 @@ public class Replica implements Client {
     private int orderCounter = 0;
     private int outstandingCounter = 0;
 
-    // Short variables for keeping track of updates spreadmessage types
+    // Short variables for keeping track of updates spreadMessage types
     private final short outstandingUpdate = 0;
     private final short balanceUpdate = 1;
-
 
     // BufferedReader object to read commandline inputs
     private BufferedReader commandLineReader;

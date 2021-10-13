@@ -3,22 +3,25 @@ IN5020 Assignment 2, using the Spread toolkit
 
 
 ## Table Of Contents
-* [Screenshots](#Screenshots)
-* [Specifications](#Specifications)
+> * [Screenshots](#Screenshots)
+> * [Usage](#Usage)
+> * [Specifications](#Specifications)
+> * [Work Distribution](#Work Distribution)
 
-## Usage
+##Usage
 * Info
 * Info
-* Inf
+* Info
 
 
 
-## Screenshots
+##Screenshots
 ![Screenshots]()
 
-### Specifications
-* [Specifications]()
- - Blabla
- - blala
- - blall
- - bllala
+###Specifications
+- Blabla
+- blala
+- blall
+- bllala
+
+###Work Distribution
