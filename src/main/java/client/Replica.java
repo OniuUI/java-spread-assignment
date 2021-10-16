@@ -57,7 +57,7 @@ public class Replica implements Client {
     public Replica(String serverAddress, int port, String accountName, int numReplicas, String filename) {
         this.serverAddress = serverAddress;
         this.port = port;
-        this.name = "replica" + (++count + 1);
+        this.name = "replica" + (++count);
         this.accountName = accountName;
         this.numReplicas = numReplicas;
         this.commandFilename = filename;
