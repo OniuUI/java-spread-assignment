@@ -11,12 +11,12 @@ import java.net.InetAddress;
 import java.util.*;
 
 public class Replica implements Client {
-    // Static id counter to give each replica a unique name
-    private static int count = 0;
     // Boolean flag for whether the replica is active or not
     private boolean active = true;
     // Boolean flag for whether the client is waiting to report a synced balance
     private boolean awaitingSyncedBalance = false;
+    // Boolean flag for whether the client is waiting to report a synced balance (naive)
+    private boolean awaitingSyncedBalanceNaive = false;
 
     // Address of the daemon server
     private String serverAddress;
@@ -57,7 +57,7 @@ public class Replica implements Client {
     public Replica(String serverAddress, int port, String accountName, int numReplicas, String filename) {
         this.serverAddress = serverAddress;
         this.port = port;
-        this.name = "replica" + (++count);
+        this.name = "replica";
         this.accountName = accountName;
         this.numReplicas = numReplicas;
         this.commandFilename = filename;
@@ -126,10 +126,10 @@ public class Replica implements Client {
                         // apply the transaction
                         if (data[0].equals("deposit")) {
                             balance += Double.parseDouble(data[1]);
-                            Log.out("[" + name + "] updated balance to: " + balance);
+                            Log.out("\033[1m[" + name + "]\033[0m " + "updated balance to: " + balance);
                         } else if (data[0].equals("addInterest")) {
                             balance *= (1 + (Double.parseDouble(data[1]) / 100));
-                            Log.out("[" + name + "] updated balance to: " + balance);
+                            Log.out("\033[1m[" + name + "]\033[0m " + "updated balance to: " + balance);
                         } else if (data[0].equals("getSyncedBalance") && awaitingSyncedBalance) {
                             Log.out("\033[1m[" + name + "]\033[0m " + "Current (synced) balance: " + balance);
                         }
@@ -137,10 +137,18 @@ public class Replica implements Client {
                         // Remove the transaction from outstanding collection.
                         // This is necessary for the client that sent the outstanding collection
                         outstandingCollection.removeIf(transaction -> transaction.uniqueId.equals(t.uniqueId));
-                        // Add the performed transaction to the executed list
-                        executedList.add(t);
+                        // Add the performed transaction to the executed list (if it isn't a getSyncedBalance transaction)
+                        if (!t.command.equals("getSyncedBalance"))
+                            executedList.add(t);
                     }
                     awaitingSyncedBalance = false;
+
+                    // Perform get synced balance (naive) response
+                    if (awaitingSyncedBalanceNaive) {
+                        Log.out("\033[1m[" + name + "]\033[0m " + "Current (naive synced) balance: " + balance);
+                        awaitingSyncedBalanceNaive = false;
+                    }
+
                 } else if (spreadMessage.getType() == balanceUpdate) {
                     // Update the balance using the balance provided in the message
                     balance = newBalance;
@@ -316,6 +324,10 @@ public class Replica implements Client {
     @Override
     public void getQuickBalance() {
         Log.cursive("\033[1m[" + name + "]\033[0m " + "Current (quick) balance: " + balance);
+    }
+
+    public void getSyncedBalanceNaive() {
+        awaitingSyncedBalanceNaive = true;
     }
 
     @Override
