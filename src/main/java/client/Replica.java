@@ -96,6 +96,9 @@ public class Replica implements Client {
         }
     }
 
+    /**
+     *
+     */
     private void addMessageListener() {
         // Create the listener object
         AdvancedMessageListener listener = new AdvancedMessageListener() {
@@ -145,8 +148,11 @@ public class Replica implements Client {
                 }
             }
 
-            // Method that receives a message when the membership status changes, for example if a client leaves
-            // or a new client joins
+            /**
+             * Method that receives a message when the membership status changes, for example if a client leaves
+             * -or a new client joins
+             * @param spreadMessage Message received on callback method.
+             */
             @Override
             public void membershipMessageReceived(SpreadMessage spreadMessage) {
                 if (!active)
@@ -172,6 +178,9 @@ public class Replica implements Client {
         connection.add(listener);
     }
 
+    /**
+     * Method for multicasting the current balance to the replicas.
+     */
     private void broadcastBalance() {
         SpreadMessage message = new SpreadMessage();
         message.setType(balanceUpdate);
@@ -187,6 +196,9 @@ public class Replica implements Client {
         }
     }
 
+    /**
+     * Busy loop for awaiting replicas to connect.
+     */
     private void awaitMembers() {
         Log.out("\033[1m[" + name + "]\033[0m " + "Awaiting correct number of replica members to join to group ...");
         // Wait until (group)members.size equals the expected number of replicas
@@ -197,6 +209,9 @@ public class Replica implements Client {
         Log.out("\033[1m[" + name + "]\033[0m " + "All replicas joined the group \033[92msuccessfully\033[0m");
     }
 
+    /**
+     *
+     */
     private void initializeBalance() {
         long t0 = System.currentTimeMillis();
         while (!hasUpdatedBalance) {
